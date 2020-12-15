@@ -1,0 +1,130 @@
+---
+title: "Situación Sector Aéreo"
+subtitle: "Bernardo Cartusciello, Vicente Celis, Jose Fernandez"
+author: "Universitat de València."
+date: "Diciembre de 2020"
+output: ioslides_presentation
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r packages-setup, include = FALSE}
+library(readxl)
+library(rvest)    # For scraping the web
+library(tidyr)    # Functions to tidy our data
+library(dplyr)    # Pipe operator, tibble handling
+library(ggplot2) 
+library(tidyverse)
+library(quantmod)
+library(dygraphs)
+library(dplyr)
+library(data.table)
+library(xts)
+library(htmlwidgets)
+library(rnaturalearth)
+```
+
+
+
+
+## Introducción 
+
+En el siguiente trabajo se relacionara el mercado bursátil con el sector aéreo, de forma más concreta se hablará de la evolución de los precios de las acciones de cinco grandes aerolíneas a lo largo de los últimos 5 años. Se podrá observar, cómo se comparan varias empresas aéreas en distintos continentes y cómo se han visto influido los precios de sus acciones por diferentes shocks en estos años.
+
+
+
+## Evolucion Precios del Sector
+
+```{r, echo = FALSE, include = TRUE}
+
+precio_ac <- read_excel("./datos/aerolineas.xlsx")
+
+media <- mean(precio_ac$`precio AAL`, na.rm = TRUE)    
+desviacion <- sd(precio_ac$`precio AAL`, na.rm = TRUE) 
+
+p1 <- gather(precio_ac, aereo, precios, `precio AAL`:`precio AIRF` )
+
+p1 %>% filter(aereo %in% c("precio AAL", "precio LHA", "precio UAL", "precio RYA","precio AIRF")) %>% 
+  ggplot(aes(x = fecha, y = precios , color = aereo)) + geom_line() 
+
+```
+
+## Evolucion Precios por Empresa
+
+```{r, echo = FALSE, include = TRUE}
+p1 %>%
+  ggplot(aes(x = fecha, y = precios, color = aereo)) +
+  geom_line() +
+  facet_wrap(~aereo,scales = 'free_y') +
+  theme_classic() +
+  labs(x = 'fecha',
+       y = "Precio acción",
+       title = "Sector Aereo")
+
+```
+
+## Grafico Dinamico
+
+
+## American Airlines
+
+```{r, echo = FALSE, include = TRUE}
+start <- as.Date("2015-01-01")
+end <- as.Date("2020-01-12")
+
+getSymbols("AAL", src = "yahoo", from = start, to = end)
+
+
+american <- AAL[,c(1,2,3,4)]
+names(american) <- c("Open", "Hight", "Low", "Close")
+
+american_1 <-
+  dygraph(american,
+          main = "American Airlines") %>%
+  dyOptions(gridLineColor = "white") %>%
+  dyRoller(rollPeriod = 7)  %>%
+  dyRangeSelector(height = 20) %>%
+  dyRangeSelector(dateWindow = c("2015-01-01", "2020-01-12")) %>%
+  dyCandlestick()
+
+american_1
+```
+
+## Mapa Trayectorias Europeas de United Airlines
+
+```{r, echo = FALSE, include = TRUE}
+
+
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+
+class(world)
+names(world)
+
+p <- ggplot(data = world) + geom_sf(fill = "papayawhip") +
+  labs(title = "Rutas Aereas United Arilines",
+       caption = "Elaboracion propia")
+p + theme(panel.grid.major = element_line(color = gray(.8), linetype = "dashed", size = 0.03),
+          panel.background = element_rect(fill = "lightblue1")) + coord_sf(xlim = c(-130, 40.00), ylim = c(23, 60), expand = FALSE) +
+  annotate("segment", x = -72.5, xend = -4, y = 41.1, yend = 40.5, colour = "black") +
+  annotate("point", x = -72.5, y = 41.1 ) + annotate("point", x = -4, y = 40.5 ) +
+  annotate(geom = "text", label = "New York", size = 3.2, x = -72.5, y = 43) +
+  annotate(geom = "text", label = "Madrid", size = 3.2, x = -4, y = 42.5) +
+  annotate("segment", x = -77, xend = -1, y = 39, yend = 51.5, colour = "black") +
+  annotate("point", x = -77, y = 39) + annotate("point", x = -1, y = 51.5) +
+  annotate(geom = "text", label = "Washington DC", size = 3.2, x = -76, y = 37.5) +
+  annotate(geom = "text", label = "Londres", size = 3.2, x = -1, y = 55) +
+  annotate("segment", x = -72.5, xend = 3, y = 41.1, yend = 48) + annotate("point", x = 3, y = 48) +
+  annotate(geom = "text", label = "Paris", size = 3.2, x = 3, y = 50) +
+  annotate("segment", x = -77, xend = 11.5, y = 39, yend = 44) + annotate("point", x =11.5, y = 44) +
+  annotate(geom = "text", label = "Roma", size = 3.2, x = 11.5, y = 46.5)
+```
+
+## Conclusión
+
+
+
+
+
